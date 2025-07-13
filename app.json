@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Desbrav: Luxurious Biker Travel App",
+    "slug": "desbrav-luxurious-biker-travel-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.rork.desbrav-luxurious-biker-travel-app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "app.rork.desbrav-luxurious-biker-travel-app"
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "This app needs access to location when open and in the background.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-background-fetch",
+        {
+          "backgroundModes": ["background-fetch"]
+        }
+      ],
+      [
+        "expo-task-manager"
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
