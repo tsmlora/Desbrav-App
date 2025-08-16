@@ -2,6 +2,7 @@ import { router } from './create-context';
 import { hiProcedure } from './routes/example/hi/route';
 import { registerProcedure } from './routes/auth/register/route';
 import { loginProcedure } from './routes/auth/login/route';
+import { devSetupProcedure } from './routes/auth/dev-setup/route';
 import { searchUsersProcedure } from './routes/users/search/route';
 import { getProfileProcedure, updateProfileProcedure } from './routes/users/profile/route';
 import { listCommunitiesProcedure } from './routes/communities/list/route';
@@ -27,6 +28,7 @@ export const appRouter = router({
   auth: router({
     register: registerProcedure,
     login: loginProcedure,
+    devSetup: devSetupProcedure,
   }),
   users: router({
     search: searchUsersProcedure,

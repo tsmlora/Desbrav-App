@@ -14,15 +14,17 @@ import {
 import { router } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react-native'
+import { Eye, EyeOff, Mail, Lock, Settings } from 'lucide-react-native'
 import Colors from '@/constants/colors'
 import Logo from '@/components/Logo'
 import PageTransition from '@/components/PageTransition'
+import { trpc } from '@/lib/trpc'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [devSetupLoading, setDevSetupLoading] = useState(false)
   const { signIn, loading, error, clearError } = useAuthStore()
 
   const handleLogin = async () => {
@@ -49,6 +51,30 @@ export default function LoginScreen() {
   const handlePasswordChange = (text: string) => {
     setPassword(text)
     if (error) clearError()
+  }
+
+  const handleDevSetup = async () => {
+    setDevSetupLoading(true)
+    clearError()
+    
+    try {
+      const result = await trpc.auth.devSetup.mutate()
+      if (result.success) {
+        // Auto-fill the form with dev credentials
+        setEmail(result.credentials.email)
+        setPassword(result.credentials.password)
+        
+        // Auto-login
+        const success = await signIn(result.credentials.email, result.credentials.password)
+        if (success) {
+          router.replace('/')
+        }
+      }
+    } catch (error: any) {
+      console.error('Dev setup error:', error)
+    } finally {
+      setDevSetupLoading(false)
+    }
   }
 
   return (
@@ -140,6 +166,18 @@ export default function LoginScreen() {
                       <Text style={styles.loginButtonText}>Entrar</Text>
                     )}
                   </LinearGradient>
+                </TouchableOpacity>
+
+                {/* Dev Setup Button */}
+                <TouchableOpacity
+                  style={styles.devButton}
+                  onPress={handleDevSetup}
+                  disabled={devSetupLoading}
+                >
+                  <Settings size={16} color={Colors.textMuted} />
+                  <Text style={styles.devButtonText}>
+                    {devSetupLoading ? 'Configurando...' : 'Login de Desenvolvimento'}
+                  </Text>
                 </TouchableOpacity>
 
                 <View style={styles.footer}>
@@ -293,6 +331,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#DC2626',
     textAlign: 'center',
+    fontWeight: '500',
+  },
+  devButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.backgroundSecondary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 8,
+  },
+  devButtonText: {
+    fontSize: 14,
+    color: Colors.textMuted,
     fontWeight: '500',
   },
 })
