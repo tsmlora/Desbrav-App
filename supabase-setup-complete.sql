@@ -6,7 +6,10 @@ CREATE TABLE IF NOT EXISTS public.users (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   email TEXT NOT NULL,
   name TEXT NOT NULL,
-  avatar_url TEXT,
+  bio TEXT DEFAULT '',
+  motorcycle TEXT DEFAULT '',
+  location TEXT DEFAULT '',
+  avatar_url TEXT DEFAULT '',
   onboarding_completed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

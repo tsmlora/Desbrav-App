@@ -1,15 +1,6 @@
 import { z } from "zod";
-import { publicProcedure } from "../../../create-context";
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client for backend use with service key for admin operations
-const supabaseUrl = 'https://juiffgxububozvqzvhih.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1aWZmZ3h1YnVib3p2cXp2aGloIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTgzMjU3NSwiZXhwIjoyMDY3NDA4NTc1fQ.example';
-
-// For now, use anon key since we don't have service key
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1aWZmZ3h1YnVib3p2cXp2aGloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MzI1NzUsImV4cCI6MjA2NzQwODU3NX0.jFiEFFw98GmRrNb09lApUmEYZ0JHnfP6SmE1mYzG9kw';
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { protectedProcedure } from "../../../create-context";
+import { TRPCError } from "@trpc/server";
 
 const getErrorMessage = (error: any): string => {
   if (typeof error === 'string') {
@@ -69,29 +60,30 @@ const getErrorMessage = (error: any): string => {
   return 'Erro inesperado ao processar solicitação';
 };
 
-export const getProfileProcedure = publicProcedure
+export const getProfileProcedure = protectedProcedure
   .input(z.object({
-    userId: z.string(),
+    userId: z.string().optional(),
   }))
-  .query(async ({ input }) => {
+  .query(async ({ input, ctx }) => {
     try {
-      console.log('Backend: Getting profile for user:', input.userId);
+      // Use the userId from input or fallback to authenticated user
+      const userId = input.userId || ctx.user.id;
+      console.log('Backend: Getting profile for user:', userId);
       
-      const { data: user, error } = await supabase
+      const { data: user, error } = await ctx.supabase
         .from('users')
         .select('*')
-        .eq('id', input.userId)
+        .eq('id', userId)
         .single();
       
       if (error) {
         const errorMessage = getErrorMessage(error);
         console.error('Backend: Error fetching profile:', errorMessage);
         
-        return {
-          success: false,
+        throw new TRPCError({
+          code: 'NOT_FOUND',
           message: errorMessage,
-          user: null,
-        };
+        });
       }
 
       console.log('Backend: Profile fetched successfully:', user);
@@ -100,30 +92,33 @@ export const getProfileProcedure = publicProcedure
         success: true,
         user,
       };
-    } catch (error) {
+    } catch (error: any) {
       const errorMessage = getErrorMessage(error);
       console.error('Backend: Error in getProfileProcedure:', errorMessage);
       
-      return {
-        success: false,
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+      
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
         message: errorMessage,
-        user: null,
-      };
+      });
     }
   });
 
-export const updateProfileProcedure = publicProcedure
+export const updateProfileProcedure = protectedProcedure
   .input(z.object({
-    userId: z.string(),
     name: z.string().optional(),
     bio: z.string().optional(),
     motorcycle: z.string().optional(),
     location: z.string().optional(),
     avatar_url: z.string().optional(),
   }))
-  .mutation(async ({ input }) => {
+  .mutation(async ({ input, ctx }) => {
     try {
-      console.log('Backend: Updating profile for user:', input.userId);
+      const userId = ctx.user.id;
+      console.log('Backend: Updating profile for user:', userId);
       console.log('Backend: Update data:', input);
       
       const updateData: any = {
@@ -139,10 +134,10 @@ export const updateProfileProcedure = publicProcedure
 
       console.log('Backend: Final update data:', updateData);
 
-      const { data: user, error } = await supabase
+      const { data: user, error } = await ctx.supabase
         .from('users')
         .update(updateData)
-        .eq('id', input.userId)
+        .eq('id', userId)
         .select()
         .single();
       
@@ -150,11 +145,10 @@ export const updateProfileProcedure = publicProcedure
         const errorMessage = getErrorMessage(error);
         console.error('Backend: Error updating profile:', errorMessage);
         
-        return {
-          success: false,
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
           message: errorMessage,
-          user: null,
-        };
+        });
       }
 
       console.log('Backend: Profile updated successfully:', user);
@@ -164,15 +158,18 @@ export const updateProfileProcedure = publicProcedure
         message: "Perfil atualizado com sucesso",
         user,
       };
-    } catch (error) {
+    } catch (error: any) {
       const errorMessage = getErrorMessage(error);
       console.error('Backend: Error in updateProfileProcedure:', errorMessage);
       
-      return {
-        success: false,
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+      
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
         message: errorMessage,
-        user: null,
-      };
+      });
     }
   });
 

@@ -1,75 +1,85 @@
 import { z } from "zod";
 import { publicProcedure } from "../../../create-context";
-
-// In-memory user storage (in production, use a real database)
-const users: Array<{
-  id: string;
-  name: string;
-  username: string;
-  email: string;
-  password: string;
-  avatar?: string;
-  bio?: string;
-  motorcycle?: string;
-  location?: string;
-  createdAt: string;
-}> = [];
+import { TRPCError } from "@trpc/server";
 
 export const registerProcedure = publicProcedure
   .input(z.object({
     name: z.string().min(1, "Nome é obrigatório"),
-    username: z.string().min(3, "Nome de usuário deve ter pelo menos 3 caracteres"),
     email: z.string().email("Email inválido"),
     password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   }))
-  .mutation(({ input }) => {
-    // Check if email already exists
-    const existingEmail = users.find(user => user.email === input.email);
-    if (existingEmail) {
-      return {
-        success: false,
-        message: "Este email já está em uso",
-        user: null,
+  .mutation(async ({ input, ctx }) => {
+    try {
+      // Create user with Supabase Auth
+      const { data, error } = await ctx.supabase.auth.signUp({
+        email: input.email,
+        password: input.password,
+        options: {
+          data: {
+            name: input.name,
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Supabase auth error:', error);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: error.message || 'Erro ao criar conta',
+        });
+      }
+
+      if (!data.user) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Erro interno do servidor',
+        });
+      }
+
+      // Create user profile in our users table
+      const profileData = {
+        id: data.user.id,
+        email: data.user.email!,
+        name: input.name,
+        bio: '',
+        motorcycle: '',
+        location: '',
+        avatar_url: '',
+        onboarding_completed: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
-    }
 
-    // Check if username already exists
-    const existingUsername = users.find(user => user.username === input.username);
-    if (existingUsername) {
+      const { error: profileError } = await ctx.supabase
+        .from('users')
+        .insert([profileData]);
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // Don't throw error here, as the auth user was created successfully
+      }
+
       return {
-        success: false,
-        message: "Este nome de usuário já está em uso",
-        user: null,
+        success: true,
+        message: "Conta criada com sucesso",
+        user: {
+          id: data.user.id,
+          email: data.user.email!,
+          name: input.name,
+        },
       };
+    } catch (error: any) {
+      console.error('Register error:', error);
+      
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+      
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Erro interno do servidor',
+      });
     }
-
-    // Create new user
-    const newUser = {
-      id: Date.now().toString(),
-      name: input.name,
-      username: input.username,
-      email: input.email,
-      password: input.password, // In production, hash this password
-      avatar: `https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=1780`,
-      bio: "Motociclista apaixonado por aventuras",
-      motorcycle: "",
-      location: "",
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push(newUser);
-
-    // Return user without password
-    const { password, ...userWithoutPassword } = newUser;
-    
-    return {
-      success: true,
-      message: "Conta criada com sucesso",
-      user: userWithoutPassword,
-    };
   });
 
 export default registerProcedure;
-
-// Export users array for use in other routes
-export { users };

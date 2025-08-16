@@ -261,46 +261,6 @@ export const useAuthStore = create<AuthState>()(
           console.log('Auth signup successful:', data.user?.id)
 
           if (data.user) {
-            console.log('User created successfully, creating profile...')
-            
-            // Wait a bit for the trigger to create the profile
-            await new Promise(resolve => setTimeout(resolve, 1500))
-
-            // Create profile manually
-            try {
-              const profileData = {
-                id: data.user.id,
-                email: data.user.email!,
-                name,
-                bio: '',
-                motorcycle: '',
-                location: '',
-                avatar_url: '',
-                onboarding_completed: false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }
-
-              console.log('Creating profile:', profileData)
-
-              const { error: profileError } = await supabase
-                .from('users')
-                .upsert([profileData], { 
-                  onConflict: 'id',
-                  ignoreDuplicates: false 
-                })
-
-              if (profileError) {
-                const errorMessage = getErrorMessage(profileError)
-                console.error('Profile creation error:', errorMessage)
-              } else {
-                console.log('Profile created successfully')
-              }
-            } catch (profileError: any) {
-              const errorMessage = getErrorMessage(profileError)
-              console.error('Profile creation failed:', errorMessage)
-            }
-
             Alert.alert('Sucesso', 'Conta criada com sucesso!')
             set({ isFirstTime: true, error: null })
             return true
