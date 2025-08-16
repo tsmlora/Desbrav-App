@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { useAppStore } from '@/store/appStore';
 import { useAchievementStore } from '@/store/achievementStore';
 import { useAchievementTracker } from '@/hooks/useAchievementTracker';
+import { useAuthStore } from '@/store/authStore';
+import { mockGuestRoutes, mockGuestAchievements } from '@/constants/mockData';
 import Colors from '@/constants/colors';
 import Logo from '@/components/Logo';
 import RouteCard from '@/components/RouteCard';
@@ -17,19 +19,28 @@ export default function HomeScreen() {
   const { routes, user } = useAppStore();
   const { userAchievements, notifications } = useAchievementStore();
   const { forceCheckAchievements } = useAchievementTracker();
+  const { isGuest } = useAuthStore();
 
-  const featuredRoutes = routes.slice(0, 3);
-  const recentAchievements = userAchievements
-    .filter(a => a.unlocked)
-    .sort((a, b) => new Date(b.dateEarned || '').getTime() - new Date(a.dateEarned || '').getTime())
-    .slice(0, 3);
+  // Use mock data for guest users
+  const displayRoutes = isGuest ? mockGuestRoutes : routes;
+  const displayAchievements = isGuest ? mockGuestAchievements : userAchievements;
+  
+  const featuredRoutes = displayRoutes.slice(0, 3);
+  const recentAchievements = isGuest 
+    ? mockGuestAchievements.filter(a => a.earned).slice(0, 3)
+    : displayAchievements
+        .filter(a => a.unlocked)
+        .sort((a, b) => new Date(b.dateEarned || '').getTime() - new Date(a.dateEarned || '').getTime())
+        .slice(0, 3);
 
-  const unreadNotifications = notifications.filter(n => !n.read).length;
+  const unreadNotifications = isGuest ? 2 : notifications.filter(n => !n.read).length;
 
   useEffect(() => {
-    // Check for new achievements on app start
-    forceCheckAchievements();
-  }, []);
+    // Check for new achievements on app start (only for real users)
+    if (!isGuest) {
+      forceCheckAchievements();
+    }
+  }, [isGuest]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -47,8 +58,16 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.welcomeSection}>
-          <Text style={styles.greeting}>Olá, {user?.name || 'Motociclista'}!</Text>
-          <Text style={styles.subtitle}>Pronto para sua próxima aventura?</Text>
+          <Text style={styles.greeting}>
+            Olá, {user?.name || 'Motociclista'}!
+            {isGuest && ' 👋'}
+          </Text>
+          <Text style={styles.subtitle}>
+            {isGuest 
+              ? 'Explore o app no modo visitante!' 
+              : 'Pronto para sua próxima aventura?'
+            }
+          </Text>
         </View>
       </View>
 
@@ -116,13 +135,17 @@ export default function HomeScreen() {
               {recentAchievements.map(achievement => (
                 <View key={achievement.id} style={styles.achievementItem}>
                   <View style={styles.achievementIcon}>
-                    <Trophy size={20} color={Colors.primary} />
+                    {isGuest ? (
+                      <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
+                    ) : (
+                      <Trophy size={20} color={Colors.primary} />
+                    )}
                   </View>
                   <Text style={styles.achievementName} numberOfLines={2}>
-                    {achievement.name}
+                    {isGuest ? achievement.title : achievement.name}
                   </Text>
                   <Text style={styles.achievementPoints}>
-                    +{achievement.points} pts
+                    {isGuest ? '✓ Conquistado' : `+${achievement.points} pts`}
                   </Text>
                 </View>
               ))}
@@ -140,7 +163,7 @@ export default function HomeScreen() {
         </View>
         
         {featuredRoutes.map(route => (
-          <RouteCard key={route.id} route={route} />
+          <RouteCard key={route.id} route={route} isGuest={isGuest} />
         ))}
       </View>
 
@@ -316,6 +339,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Colors.primary,
     fontWeight: '600',
+  },
+  achievementEmoji: {
+    fontSize: 20,
   },
   exploreButton: {
     borderRadius: 12,

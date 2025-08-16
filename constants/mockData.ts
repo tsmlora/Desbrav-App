@@ -1,5 +1,131 @@
 import { Community, Event, Medal, User } from '@/types';
 
+// Additional mock data for guest mode
+export const mockGuestRoutes = [
+  {
+    id: '1',
+    title: 'Rota da Serra',
+    description: 'Uma bela rota pelas montanhas com paisagens incríveis',
+    distance: '120 km',
+    duration: '3h 30min',
+    difficulty: 'Médio',
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
+    rating: 4.8,
+    reviews: 24
+  },
+  {
+    id: '2',
+    title: 'Litoral Norte',
+    description: 'Rota costeira com vistas deslumbrantes do oceano',
+    distance: '85 km',
+    duration: '2h 15min',
+    difficulty: 'Fácil',
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
+    rating: 4.9,
+    reviews: 18
+  },
+  {
+    id: '3',
+    title: 'Vale dos Vinhedos',
+    description: 'Passeio pelos vinhedos com degustação incluída',
+    distance: '95 km',
+    duration: '4h 00min',
+    difficulty: 'Fácil',
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
+    rating: 4.7,
+    reviews: 31
+  }
+];
+
+export const mockGuestMessages = [
+  {
+    id: '1',
+    name: 'Carlos Silva',
+    lastMessage: 'Vamos para a trilha amanhã?',
+    time: '14:30',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    unread: 2
+  },
+  {
+    id: '2',
+    name: 'Ana Santos',
+    lastMessage: 'Obrigada pela dica da rota!',
+    time: '12:15',
+    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+    unread: 0
+  },
+  {
+    id: '3',
+    name: 'Grupo SP Riders',
+    lastMessage: 'Evento confirmado para domingo',
+    time: '10:45',
+    avatar: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=150&h=150&fit=crop',
+    unread: 5
+  }
+];
+
+export const mockGuestRestPlaces = [
+  {
+    id: '1',
+    name: 'Posto Shell BR-116',
+    description: 'Posto com lanchonete e área de descanso',
+    location: 'BR-116, Km 245',
+    rating: 4.5,
+    amenities: ['Combustível', 'Lanchonete', 'Banheiro', 'WiFi'],
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
+    distance: '15 km'
+  },
+  {
+    id: '2',
+    name: 'Restaurante do João',
+    description: 'Comida caseira e estacionamento seguro',
+    location: 'Estrada da Serra, Km 12',
+    rating: 4.8,
+    amenities: ['Restaurante', 'Estacionamento', 'Banheiro'],
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
+    distance: '8 km'
+  }
+];
+
+export const mockGuestAchievements = [
+  {
+    id: '1',
+    title: 'Primeiro Passeio',
+    description: 'Complete seu primeiro passeio',
+    icon: '🏆',
+    earned: true,
+    earnedDate: '2024-01-15',
+    progress: 100
+  },
+  {
+    id: '2',
+    title: 'Explorador',
+    description: 'Complete 10 rotas diferentes',
+    icon: '🗺️',
+    earned: true,
+    earnedDate: '2024-01-28',
+    progress: 100
+  },
+  {
+    id: '3',
+    title: 'Aventureiro',
+    description: 'Complete uma rota de dificuldade alta',
+    icon: '⛰️',
+    earned: false,
+    earnedDate: null,
+    progress: 60
+  },
+  {
+    id: '4',
+    title: 'Social',
+    description: 'Participe de 5 eventos da comunidade',
+    icon: '👥',
+    earned: true,
+    earnedDate: '2024-02-05',
+    progress: 100
+  }
+];
+
 export const mockUser: User = {
   id: '1',
   name: 'Ricardo Oliveira',
@@ -27,6 +153,35 @@ export const mockUser: User = {
   ],
   friends: ['2', '3', '4'],
   completedRoutes: ['1', '2']
+};
+
+export const mockGuestUser: User = {
+  id: 'guest-user',
+  name: 'Visitante',
+  avatar: 'https://img.freepik.com/fotos-gratis/retrato-de-homem-branco-isolado_53876-40306.jpg',
+  bio: 'Explorando o app como visitante',
+  motorcycle: 'Honda CB 600F Hornet',
+  location: 'São Paulo, SP',
+  medals: [
+    {
+      id: '1',
+      name: 'Primeiro Passeio',
+      image: 'https://images.unsplash.com/photo-1614036417651-efe5912149d8?q=80&w=1974',
+      description: 'Complete seu primeiro passeio',
+      dateEarned: '2024-01-15',
+      routeId: '1'
+    },
+    {
+      id: '2',
+      name: 'Explorador',
+      image: 'https://images.unsplash.com/photo-1614036417651-efe5912149d8?q=80&w=1974',
+      description: 'Complete 10 rotas diferentes',
+      dateEarned: '2024-01-28',
+      routeId: '2'
+    }
+  ],
+  friends: ['2', '3', '4'],
+  completedRoutes: ['1', '2', '3']
 };
 
 export const mockMedals: Medal[] = [

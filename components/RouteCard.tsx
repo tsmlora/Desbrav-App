@@ -7,17 +7,19 @@ import Colors from '@/constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface RouteCardProps {
-  route: Route;
+  route: Route | any; // Allow both Route type and guest route type
   completed?: boolean;
+  isGuest?: boolean;
 }
 
-export default function RouteCard({ route, completed = false }: RouteCardProps) {
+export default function RouteCard({ route, completed = false, isGuest = false }: RouteCardProps) {
   const router = useRouter();
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'Fácil':
         return '#10B981';
+      case 'Médio':
       case 'Moderado':
         return '#F59E0B';
       case 'Difícil':
@@ -49,11 +51,13 @@ export default function RouteCard({ route, completed = false }: RouteCardProps) 
       )}
       
       <View style={styles.content}>
-        <Text style={styles.name}>{route.name}</Text>
+        <Text style={styles.name}>{isGuest ? route.title : route.name}</Text>
         
         <View style={styles.infoRow}>
           <MapPin size={16} color={Colors.textSecondary} />
-          <Text style={styles.region}>{route.region}</Text>
+          <Text style={styles.region}>
+            {isGuest ? route.distance : route.region}
+          </Text>
           
           <View style={[
             styles.difficultyBadge, 
@@ -67,13 +71,21 @@ export default function RouteCard({ route, completed = false }: RouteCardProps) 
           {route.description}
         </Text>
         
-        {route.dangers.length > 0 && (
-          <View style={styles.dangerContainer}>
-            <AlertTriangle size={16} color={Colors.accent} />
-            <Text style={styles.dangerText}>
-              {route.dangers.length} {route.dangers.length === 1 ? 'perigo' : 'perigos'} na rota
+        {isGuest ? (
+          <View style={styles.guestInfo}>
+            <Text style={styles.guestInfoText}>
+              ⭐ {route.rating} • {route.reviews} avaliações • {route.duration}
             </Text>
           </View>
+        ) : (
+          route.dangers?.length > 0 && (
+            <View style={styles.dangerContainer}>
+              <AlertTriangle size={16} color={Colors.accent} />
+              <Text style={styles.dangerText}>
+                {route.dangers.length} {route.dangers.length === 1 ? 'perigo' : 'perigos'} na rota
+              </Text>
+            </View>
+          )
         )}
       </View>
     </TouchableOpacity>
@@ -164,5 +176,13 @@ const styles = StyleSheet.create({
   dangerText: {
     color: Colors.accent,
     fontSize: 13,
+  },
+  guestInfo: {
+    marginTop: 8,
+  },
+  guestInfoText: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

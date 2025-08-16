@@ -8,14 +8,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Lock, Trophy, Target } from 'lucide-react-native';
 
 interface AchievementCardProps {
-  achievement: Achievement;
+  achievement: Achievement | any; // Allow both Achievement type and guest achievement type
   showProgress?: boolean;
+  isGuest?: boolean;
 }
 
-export default function AchievementCard({ achievement, showProgress = true }: AchievementCardProps) {
+export default function AchievementCard({ achievement, showProgress = true, isGuest = false }: AchievementCardProps) {
   const { getProgressForAchievement } = useAchievementStore();
-  const progress = getProgressForAchievement(achievement.id);
-  const rarityColors = getRarityGradient(achievement.rarity);
+  const progress = isGuest 
+    ? { current: achievement.progress || 0, max: 100, percentage: achievement.progress || 0 }
+    : getProgressForAchievement(achievement.id);
+  const rarityColors = isGuest 
+    ? ['#4F46E5', '#7C3AED'] 
+    : getRarityGradient(achievement.rarity);
 
   return (
     <TouchableOpacity style={styles.container}>
@@ -27,17 +32,29 @@ export default function AchievementCard({ achievement, showProgress = true }: Ac
           <View style={styles.iconContainer}>
             {achievement.unlocked ? (
               <View style={styles.achievementIcon}>
-                <Image 
-                  source={{ uri: achievement.badge_url }} 
-                  style={styles.badgeImage}
-                />
-                <View style={styles.trophyOverlay}>
-                  <Trophy size={16} color="#FFD700" />
-                </View>
+                {isGuest ? (
+                  <View style={styles.guestIconContainer}>
+                    <Text style={styles.guestIcon}>{achievement.icon}</Text>
+                  </View>
+                ) : (
+                  <>
+                    <Image 
+                      source={{ uri: achievement.badge_url }} 
+                      style={styles.badgeImage}
+                    />
+                    <View style={styles.trophyOverlay}>
+                      <Trophy size={16} color="#FFD700" />
+                    </View>
+                  </>
+                )}
               </View>
             ) : (
               <View style={[styles.achievementIcon, styles.lockedIcon]}>
-                <Lock size={24} color={Colors.textSecondary} />
+                {isGuest ? (
+                  <Text style={styles.guestIconLocked}>{achievement.icon}</Text>
+                ) : (
+                  <Lock size={24} color={Colors.textSecondary} />
+                )}
               </View>
             )}
           </View>
@@ -47,8 +64,10 @@ export default function AchievementCard({ achievement, showProgress = true }: Ac
               <Text style={[styles.name, !achievement.unlocked && styles.lockedText]}>
                 {achievement.name}
               </Text>
-              <View style={[styles.rarityBadge, { backgroundColor: getRarityColor(achievement.rarity) }]}>
-                <Text style={styles.rarityText}>{achievement.rarity.toUpperCase()}</Text>
+              <View style={[styles.rarityBadge, { backgroundColor: isGuest ? '#4F46E5' : getRarityColor(achievement.rarity) }]}>
+                <Text style={styles.rarityText}>
+                  {isGuest ? 'VISITANTE' : achievement.rarity.toUpperCase()}
+                </Text>
               </View>
             </View>
 
@@ -60,7 +79,7 @@ export default function AchievementCard({ achievement, showProgress = true }: Ac
               <View style={styles.pointsContainer}>
                 <Target size={14} color={achievement.unlocked ? Colors.primary : Colors.textSecondary} />
                 <Text style={[styles.points, !achievement.unlocked && styles.lockedText]}>
-                  {achievement.points} pts
+                  {isGuest ? (achievement.unlocked ? '✓ Conquistado' : 'Bloqueado') : `${achievement.points} pts`}
                 </Text>
               </View>
 
@@ -77,12 +96,15 @@ export default function AchievementCard({ achievement, showProgress = true }: Ac
                   <View 
                     style={[
                       styles.progressFill, 
-                      { width: `${progress.percentage}%`, backgroundColor: getRarityColor(achievement.rarity) }
+                      { 
+                        width: `${progress.percentage}%`, 
+                        backgroundColor: isGuest ? '#4F46E5' : getRarityColor(achievement.rarity) 
+                      }
                     ]} 
                   />
                 </View>
                 <Text style={styles.progressText}>
-                  {progress.current} / {progress.max}
+                  {isGuest ? `${progress.current}%` : `${progress.current} / ${progress.max}`}
                 </Text>
               </View>
             )}
@@ -213,5 +235,20 @@ const styles = StyleSheet.create({
   lockedText: {
     color: Colors.textSecondary,
     opacity: 0.7,
+  },
+  guestIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  guestIcon: {
+    fontSize: 24,
+  },
+  guestIconLocked: {
+    fontSize: 24,
+    opacity: 0.5,
   },
 });

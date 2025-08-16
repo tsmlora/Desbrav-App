@@ -11,8 +11,10 @@ interface AuthState {
   isFirstTime: boolean
   error: string | null
   initialized: boolean
+  isGuest: boolean
   signUp: (email: string, password: string, name: string) => Promise<boolean>
   signIn: (email: string, password: string) => Promise<boolean>
+  signInAsGuest: () => void
   signOut: () => Promise<void>
   updateProfile: (updates: Partial<User>) => Promise<boolean>
   initialize: () => Promise<void>
@@ -95,6 +97,7 @@ export const useAuthStore = create<AuthState>()(
       isFirstTime: true,
       error: null,
       initialized: false,
+      isGuest: false,
 
       initialize: async () => {
         if (get().initialized) return
@@ -338,10 +341,36 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      signInAsGuest: () => {
+        const guestUser: User = {
+          id: 'guest-user',
+          email: 'visitante@desbrav.app',
+          name: 'Visitante',
+          bio: 'Explorando o app como visitante',
+          motorcycle: 'Honda CB 600F Hornet',
+          location: 'São Paulo, SP',
+          avatar_url: 'https://img.freepik.com/fotos-gratis/retrato-de-homem-branco-isolado_53876-40306.jpg',
+          onboarding_completed: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        
+        set({ 
+          user: guestUser, 
+          session: { user: { id: 'guest-user' } }, 
+          isFirstTime: false, 
+          isGuest: true,
+          error: null 
+        })
+      },
+
       signOut: async () => {
         try {
-          await supabase.auth.signOut()
-          set({ user: null, session: null, isFirstTime: true })
+          const { isGuest } = get()
+          if (!isGuest) {
+            await supabase.auth.signOut()
+          }
+          set({ user: null, session: null, isFirstTime: true, isGuest: false })
         } catch (error: any) {
           console.error('Logout error:', error)
           const errorMessage = getErrorMessage(error)
@@ -350,10 +379,18 @@ export const useAuthStore = create<AuthState>()(
       },
 
       updateProfile: async (updates: Partial<User>) => {
-        const { user } = get()
+        const { user, isGuest } = get()
         if (!user) {
           Alert.alert('Erro', 'Usuário não encontrado')
           return false
+        }
+
+        // If guest user, just update locally
+        if (isGuest) {
+          const updatedUser = { ...user, ...updates, updated_at: new Date().toISOString() }
+          set({ user: updatedUser })
+          Alert.alert('Sucesso', 'Perfil atualizado localmente! (Modo visitante)')
+          return true
         }
 
         set({ loading: true })
@@ -411,8 +448,8 @@ export const useAuthStore = create<AuthState>()(
       setFirstTimeComplete: () => {
         set({ isFirstTime: false })
         // Update user profile to mark onboarding as completed
-        const { user } = get()
-        if (user) {
+        const { user, isGuest } = get()
+        if (user && !isGuest) {
           supabase
             .from('users')
             .update({ onboarding_completed: true })
@@ -437,7 +474,8 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({ 
         user: state.user, 
         session: state.session, 
-        isFirstTime: state.isFirstTime 
+        isFirstTime: state.isFirstTime,
+        isGuest: state.isGuest 
       }),
     }
   )

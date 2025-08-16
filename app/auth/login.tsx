@@ -14,7 +14,7 @@ import {
 import { router } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Eye, EyeOff, Mail, Lock, Settings } from 'lucide-react-native'
+import { Eye, EyeOff, Mail, Lock, Settings, UserCheck } from 'lucide-react-native'
 import Colors from '@/constants/colors'
 import Logo from '@/components/Logo'
 import PageTransition from '@/components/PageTransition'
@@ -25,7 +25,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [devSetupLoading, setDevSetupLoading] = useState(false)
-  const { signIn, loading, error, clearError } = useAuthStore()
+  const { signIn, signInAsGuest, loading, error, clearError } = useAuthStore()
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -75,6 +75,12 @@ export default function LoginScreen() {
     } finally {
       setDevSetupLoading(false)
     }
+  }
+
+  const handleGuestLogin = () => {
+    clearError()
+    signInAsGuest()
+    router.replace('/')
   }
 
   return (
@@ -165,6 +171,20 @@ export default function LoginScreen() {
                     ) : (
                       <Text style={styles.loginButtonText}>Entrar</Text>
                     )}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {/* Guest Login Button */}
+                <TouchableOpacity
+                  style={styles.guestButton}
+                  onPress={handleGuestLogin}
+                >
+                  <LinearGradient
+                    colors={[Colors.backgroundSecondary, Colors.card]}
+                    style={styles.guestButtonGradient}
+                  >
+                    <UserCheck size={20} color={Colors.primary} />
+                    <Text style={styles.guestButtonText}>Entrar como Visitante</Text>
                   </LinearGradient>
                 </TouchableOpacity>
 
@@ -349,5 +369,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textMuted,
     fontWeight: '500',
+  },
+  guestButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  guestButtonGradient: {
+    height: 56,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+  },
+  guestButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.primary,
   },
 })

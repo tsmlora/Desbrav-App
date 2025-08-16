@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Search, MessageCircle, Send } from 'lucide-react-native';
 import { useMessageStore } from '@/store/messageStore';
 import { useAuthStore } from '@/store/authStore';
+import { mockGuestMessages } from '@/constants/mockData';
 import Colors from '@/constants/colors';
 
 
@@ -11,16 +12,33 @@ import Colors from '@/constants/colors';
 export default function MessagesScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const { user } = useAuthStore();
+  const { user, isGuest } = useAuthStore();
   const { conversations, loading, loadConversations } = useMessageStore();
 
   useEffect(() => {
-    if (user) {
+    if (user && !isGuest) {
       loadConversations();
     }
-  }, [user]);
+  }, [user, isGuest]);
 
-  const filteredConversations = conversations.filter(conv =>
+  // Use mock data for guest users
+  const displayConversations = isGuest 
+    ? mockGuestMessages.map(msg => ({
+        id: msg.id,
+        user: {
+          id: msg.id,
+          name: msg.name,
+          avatar_url: msg.avatar
+        },
+        lastMessage: {
+          content: msg.lastMessage,
+          created_at: new Date().toISOString()
+        },
+        unreadCount: msg.unread
+      }))
+    : conversations;
+
+  const filteredConversations = displayConversations.filter(conv =>
     conv.user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -55,7 +73,7 @@ export default function MessagesScreen() {
         />
       </View>
 
-      {loading ? (
+      {(loading && !isGuest) ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -79,7 +97,10 @@ export default function MessagesScreen() {
                   <View style={styles.conversationHeader}>
                     <Text style={styles.userName}>{conversation.user.name}</Text>
                     <Text style={styles.timestamp}>
-                      {conversation.lastMessage ? formatTimestamp(conversation.lastMessage.created_at) : ''}
+                      {isGuest 
+                        ? mockGuestMessages.find(m => m.id === conversation.id)?.time || ''
+                        : (conversation.lastMessage ? formatTimestamp(conversation.lastMessage.created_at) : '')
+                      }
                     </Text>
                   </View>
                   
@@ -112,7 +133,9 @@ export default function MessagesScreen() {
               <Text style={styles.emptySubtext}>
                 {searchQuery 
                   ? 'Tente buscar por outro nome' 
-                  : 'Comece uma conversa com outros motociclistas'
+                  : isGuest 
+                    ? 'Dados de exemplo no modo visitante'
+                    : 'Comece uma conversa com outros motociclistas'
                 }
               </Text>
             </View>
@@ -125,7 +148,9 @@ export default function MessagesScreen() {
         onPress={() => router.push('/search')}
       >
         <MessageCircle size={20} color={Colors.background} />
-        <Text style={styles.newMessageText}>Nova Mensagem</Text>
+        <Text style={styles.newMessageText}>
+          {isGuest ? 'Nova Mensagem (Visitante)' : 'Nova Mensagem'}
+        </Text>
       </TouchableOpacity>
     </View>
   );

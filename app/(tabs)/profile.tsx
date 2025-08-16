@@ -3,11 +3,11 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Alert } fr
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import Colors from '@/constants/colors';
-import { ChevronRight, Edit, Search, Settings, LogOut, User, Bike, MapPin } from 'lucide-react-native';
+import { ChevronRight, Edit, Search, Settings, LogOut, User, Bike, MapPin, Eye } from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, signOut, refreshProfile } = useAuthStore();
+  const { user, signOut, refreshProfile, isGuest } = useAuthStore();
 
   // Refresh profile data when screen loads
   useEffect(() => {
@@ -58,7 +58,15 @@ export default function ProfileScreen() {
         />
         
         <View style={styles.userInfo}>
-          <Text style={styles.name}>{user.name}</Text>
+          <View style={styles.nameContainer}>
+            <Text style={styles.name}>{user.name}</Text>
+            {isGuest && (
+              <View style={styles.guestBadge}>
+                <Eye size={12} color={Colors.background} />
+                <Text style={styles.guestBadgeText}>Visitante</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.username}>{user.email}</Text>
           
           {user.bio ? (
@@ -97,7 +105,9 @@ export default function ProfileScreen() {
           onPress={() => router.push('/edit-profile')}
         >
           <Edit size={16} color={Colors.background} />
-          <Text style={styles.editButtonText}>Editar</Text>
+          <Text style={styles.editButtonText}>
+            {isGuest ? 'Editar (Visitante)' : 'Editar'}
+          </Text>
         </TouchableOpacity>
       </View>
       
@@ -145,7 +155,9 @@ export default function ProfileScreen() {
           onPress={handleLogout}
         >
           <LogOut size={20} color={Colors.accent} />
-          <Text style={[styles.actionText, styles.logoutText]}>Sair</Text>
+          <Text style={[styles.actionText, styles.logoutText]}>
+            {isGuest ? 'Sair do Modo Visitante' : 'Sair'}
+          </Text>
           <ChevronRight size={20} color={Colors.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -207,11 +219,30 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     width: '100%',
   },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  guestBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  guestBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: Colors.background,
+  },
   name: {
     fontSize: 24,
     fontWeight: 'bold',
     color: Colors.text,
-    marginBottom: 4,
   },
   username: {
     fontSize: 16,

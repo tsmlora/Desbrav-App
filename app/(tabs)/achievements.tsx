@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { useAchievementStore } from '@/store/achievementStore';
+import { useAuthStore } from '@/store/authStore';
+import { mockGuestAchievements } from '@/constants/mockData';
 import Colors from '@/constants/colors';
 import AchievementCard from '@/components/AchievementCard';
 import LevelProgress from '@/components/LevelProgress';
@@ -14,18 +16,36 @@ export default function AchievementsScreen() {
     markNotificationRead,
     clearNotifications 
   } = useAchievementStore();
+  const { isGuest } = useAuthStore();
   
   const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked' | 'category'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [currentNotification, setCurrentNotification] = useState<any>(null);
 
-  const unlockedAchievements = userAchievements.filter(a => a.unlocked);
-  const lockedAchievements = userAchievements.filter(a => !a.unlocked);
+  // Use mock data for guest users
+  const displayAchievements = isGuest 
+    ? mockGuestAchievements.map(achievement => ({
+        id: achievement.id,
+        name: achievement.title,
+        description: achievement.description,
+        unlocked: achievement.earned,
+        progress: achievement.progress,
+        maxProgress: 100,
+        points: achievement.earned ? 100 : 0,
+        rarity: 'common' as const,
+        category: 'exploration' as const,
+        dateEarned: achievement.earnedDate,
+        icon: achievement.icon
+      }))
+    : userAchievements;
+
+  const unlockedAchievements = displayAchievements.filter(a => a.unlocked);
+  const lockedAchievements = displayAchievements.filter(a => !a.unlocked);
   
   const categories = ['all', 'distance', 'speed', 'exploration', 'social', 'time'];
   
   const getFilteredAchievements = (): Achievement[] => {
-    let filtered = userAchievements;
+    let filtered = displayAchievements;
     
     if (filter === 'unlocked') {
       filtered = unlockedAchievements;
@@ -49,12 +69,14 @@ export default function AchievementsScreen() {
   };
 
   useEffect(() => {
-    // Show notifications
-    const unreadNotifications = notifications.filter(n => !n.read);
-    if (unreadNotifications.length > 0 && !currentNotification) {
-      setCurrentNotification(unreadNotifications[0]);
+    // Show notifications (only for real users)
+    if (!isGuest) {
+      const unreadNotifications = notifications.filter(n => !n.read);
+      if (unreadNotifications.length > 0 && !currentNotification) {
+        setCurrentNotification(unreadNotifications[0]);
+      }
     }
-  }, [notifications]);
+  }, [notifications, isGuest]);
 
   const handleDismissNotification = () => {
     if (currentNotification) {
@@ -87,7 +109,7 @@ export default function AchievementsScreen() {
 
   return (
     <View style={styles.container}>
-      {currentNotification && (
+      {currentNotification && !isGuest && (
         <AchievementNotification
           notification={currentNotification}
           onDismiss={handleDismissNotification}
@@ -99,7 +121,7 @@ export default function AchievementsScreen() {
         
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{userAchievements.length}</Text>
+            <Text style={styles.statValue}>{displayAchievements.length}</Text>
             <Text style={styles.statLabel}>Total</Text>
           </View>
           
@@ -161,12 +183,16 @@ export default function AchievementsScreen() {
                 key={achievement.id} 
                 achievement={achievement}
                 showProgress={true}
+                isGuest={isGuest}
               />
             ))
           ) : (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                Nenhuma conquista encontrada para os filtros selecionados.
+                {isGuest 
+                  ? 'Dados de exemplo no modo visitante'
+                  : 'Nenhuma conquista encontrada para os filtros selecionados.'
+                }
               </Text>
             </View>
           )}
