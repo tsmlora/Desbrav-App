@@ -62,6 +62,15 @@ const getErrorMessage = (error: any): string => {
     }
   }
   
+  // Handle network errors
+  if (error?.name === 'TypeError' && error?.message?.includes('Failed to fetch')) {
+    return 'Erro de conexão: Verifique sua internet ou tente novamente'
+  }
+  
+  if (error?.name === 'AuthRetryableFetchError') {
+    return 'Erro de autenticação: Verifique sua conexão'
+  }
+  
   // Try to extract meaningful error info
   if (typeof error === 'object' && error !== null) {
     try {

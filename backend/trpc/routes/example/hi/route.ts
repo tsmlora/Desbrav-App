@@ -1,12 +1,13 @@
-import { z } from "zod";
 import { publicProcedure } from "../../../create-context";
 
+// Simple test query without input
 export const hiProcedure = publicProcedure
-  .input(z.object({ name: z.string() }))
-  .mutation(({ input }) => {
+  .query(() => {
+    console.log('Hi procedure called successfully');
     return {
-      hello: input.name,
-      date: new Date(),
+      greeting: "Hello from tRPC!",
+      timestamp: new Date().toISOString(),
+      status: "Backend is working!"
     };
   });
 

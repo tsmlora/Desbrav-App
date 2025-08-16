@@ -18,13 +18,14 @@ import { Eye, EyeOff, Mail, Lock, Settings, UserCheck } from 'lucide-react-nativ
 import Colors from '@/constants/colors'
 import Logo from '@/components/Logo'
 import PageTransition from '@/components/PageTransition'
-import { trpc } from '@/lib/trpc'
+import { vanillaTrpcClient } from '@/lib/trpc'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [devSetupLoading, setDevSetupLoading] = useState(false)
+  const [testLoading, setTestLoading] = useState(false)
   const { signIn, signInAsGuest, loading, error, clearError } = useAuthStore()
 
   const handleLogin = async () => {
@@ -58,7 +59,7 @@ export default function LoginScreen() {
     clearError()
     
     try {
-      const result = await trpc.auth.devSetup.mutate()
+      const result = await vanillaTrpcClient.auth.devSetup.mutate()
       if (result.success) {
         // Auto-fill the form with dev credentials
         setEmail(result.credentials.email)
@@ -81,6 +82,23 @@ export default function LoginScreen() {
     clearError()
     signInAsGuest()
     router.replace('/')
+  }
+
+  const handleTestBackend = async () => {
+    setTestLoading(true)
+    clearError()
+    
+    try {
+      console.log('Testing backend connection...')
+      const result = await vanillaTrpcClient.example.hi.query()
+      console.log('Backend test result:', result)
+      alert(`Backend funcionando! ${result.greeting}`)
+    } catch (error: any) {
+      console.error('Backend test error:', error)
+      alert(`Erro no backend: ${error.message || 'Erro desconhecido'}`)
+    } finally {
+      setTestLoading(false)
+    }
   }
 
   return (
@@ -186,6 +204,18 @@ export default function LoginScreen() {
                     <UserCheck size={20} color={Colors.primary} />
                     <Text style={styles.guestButtonText}>Entrar como Visitante</Text>
                   </LinearGradient>
+                </TouchableOpacity>
+
+                {/* Test Backend Button */}
+                <TouchableOpacity
+                  style={styles.devButton}
+                  onPress={handleTestBackend}
+                  disabled={testLoading}
+                >
+                  <Settings size={16} color={Colors.textMuted} />
+                  <Text style={styles.devButtonText}>
+                    {testLoading ? 'Testando...' : 'Testar Backend'}
+                  </Text>
                 </TouchableOpacity>
 
                 {/* Dev Setup Button */}
