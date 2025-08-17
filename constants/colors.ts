@@ -28,6 +28,7 @@ export default {
   
   // Card and surface colors
   card: '#FFFFFF',
+  cardBackground: '#F8F9FA',
   cardDark: '#2D2D2D',
   surface: '#F8F9FA',
   surfaceDark: '#2D2D2D',
