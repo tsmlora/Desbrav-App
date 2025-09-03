@@ -43,12 +43,29 @@ export default function MapScreen() {
       {/* Full Screen Map */}
       <View style={styles.mapContainer}>
         <LinearGradient
-          colors={['#1e3c72', '#2a5298', '#4a90e2', '#7bb3f0']}
+          colors={['#0066cc', '#0080ff', '#4da6ff', '#80bfff']}
           style={styles.mapGradient}
           locations={[0, 0.3, 0.7, 1]}
         >
-          {/* Brazil outline representation */}
+          {/* Brazil territory representation */}
           <View style={styles.brazilOutline}>
+            {/* Brazil mainland territory */}
+            <View style={styles.brazilTerritory} />
+            
+            {/* Amazon region */}
+            <View style={styles.amazonRegion} />
+            
+            {/* Northeast region */}
+            <View style={styles.northeastRegion} />
+            
+            {/* Southeast region */}
+            <View style={styles.southeastRegion} />
+            
+            {/* South region */}
+            <View style={styles.southRegion} />
+            
+            {/* Central-West region */}
+            <View style={styles.centralWestRegion} />
             {/* Major cities markers */}
             <View style={[styles.cityMarker, { top: '25%', left: '45%' }]}>
               <View style={styles.cityDot} />
@@ -215,6 +232,72 @@ const styles = StyleSheet.create({
   mapGradient: {
     flex: 1,
     position: 'relative',
+  },
+  brazilTerritory: {
+    position: 'absolute',
+    top: '15%',
+    left: '25%',
+    width: '50%',
+    height: '65%',
+    backgroundColor: '#2d5016',
+    borderRadius: 20,
+    transform: [{ rotate: '-5deg' }],
+    opacity: 0.9,
+  },
+  amazonRegion: {
+    position: 'absolute',
+    top: '10%',
+    left: '20%',
+    width: '45%',
+    height: '35%',
+    backgroundColor: '#1a4d0a',
+    borderRadius: 25,
+    transform: [{ rotate: '-8deg' }],
+    opacity: 0.8,
+  },
+  northeastRegion: {
+    position: 'absolute',
+    top: '20%',
+    left: '55%',
+    width: '25%',
+    height: '30%',
+    backgroundColor: '#8b4513',
+    borderRadius: 15,
+    transform: [{ rotate: '10deg' }],
+    opacity: 0.7,
+  },
+  southeastRegion: {
+    position: 'absolute',
+    top: '45%',
+    left: '45%',
+    width: '30%',
+    height: '25%',
+    backgroundColor: '#228b22',
+    borderRadius: 18,
+    transform: [{ rotate: '-3deg' }],
+    opacity: 0.8,
+  },
+  southRegion: {
+    position: 'absolute',
+    top: '65%',
+    left: '40%',
+    width: '25%',
+    height: '20%',
+    backgroundColor: '#32cd32',
+    borderRadius: 12,
+    transform: [{ rotate: '5deg' }],
+    opacity: 0.7,
+  },
+  centralWestRegion: {
+    position: 'absolute',
+    top: '35%',
+    left: '30%',
+    width: '25%',
+    height: '30%',
+    backgroundColor: '#6b8e23',
+    borderRadius: 20,
+    transform: [{ rotate: '-10deg' }],
+    opacity: 0.6,
   },
   brazilOutline: {
     position: 'absolute',
