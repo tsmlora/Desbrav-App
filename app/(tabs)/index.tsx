@@ -1,39 +1,33 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/store/appStore';
 import { useAchievementStore } from '@/store/achievementStore';
 import { useAchievementTracker } from '@/hooks/useAchievementTracker';
 import { useAuthStore } from '@/store/authStore';
-import { mockGuestRoutes, mockGuestAchievements } from '@/constants/mockData';
 import Colors from '@/constants/colors';
 import Logo from '@/components/Logo';
-import RouteCard from '@/components/RouteCard';
 import GPSStatusCard from '@/components/GPSStatusCard';
-import LevelProgress from '@/components/LevelProgress';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MapPin, Trophy, Users, Navigation, Bell } from 'lucide-react-native';
+import { MapPin, Trophy, Users, Navigation, MessageCircle, Locate, Plus } from 'lucide-react-native';
+
+const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { routes, user } = useAppStore();
-  const { userAchievements, notifications } = useAchievementStore();
+  const { user } = useAppStore();
+  const { notifications } = useAchievementStore();
   const { forceCheckAchievements } = useAchievementTracker();
   const { isGuest } = useAuthStore();
-
-  // Use mock data for guest users
-  const displayRoutes = isGuest ? mockGuestRoutes : routes;
-  const displayAchievements = isGuest ? mockGuestAchievements : userAchievements;
-  
-  const featuredRoutes = displayRoutes.slice(0, 3);
-  const recentAchievements = isGuest 
-    ? mockGuestAchievements.filter(a => a.earned).slice(0, 3)
-    : displayAchievements
-        .filter(a => a.unlocked)
-        .sort((a, b) => new Date(b.dateEarned || '').getTime() - new Date(a.dateEarned || '').getTime())
-        .slice(0, 3);
+  const [mapRegion, setMapRegion] = useState({
+    latitude: -23.5505,
+    longitude: -46.6333,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
 
   const unreadNotifications = isGuest ? 2 : notifications.filter(n => !n.read).length;
+  const unreadMessages = isGuest ? 3 : 0; // Mock unread messages
 
   useEffect(() => {
     // Check for new achievements on app start (only for real users)
@@ -43,16 +37,19 @@ export default function HomeScreen() {
   }, [isGuest]);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header with Logo */}
+    <View style={styles.container}>
+      {/* Header with Logo and Messages Button */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Logo size="medium" />
-          <TouchableOpacity style={styles.notificationButton}>
-            <Bell size={24} color={Colors.text} />
-            {unreadNotifications > 0 && (
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationBadgeText}>{unreadNotifications}</Text>
+          <TouchableOpacity 
+            style={styles.messagesButton}
+            onPress={() => router.push('/(tabs)/messages')}
+          >
+            <MessageCircle size={24} color={Colors.text} />
+            {unreadMessages > 0 && (
+              <View style={styles.messageBadge}>
+                <Text style={styles.messageBadgeText}>{unreadMessages}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -64,46 +61,90 @@ export default function HomeScreen() {
           </Text>
           <Text style={styles.subtitle}>
             {isGuest 
-              ? 'Explore o app no modo visitante!' 
-              : 'Pronto para sua próxima aventura?'
+              ? 'Explore rotas e pontos no mapa!' 
+              : 'Descubra novas aventuras próximas a você'
             }
           </Text>
         </View>
       </View>
 
-      <LevelProgress />
+      {/* Map Container */}
+      <View style={styles.mapContainer}>
+        {/* Representational Map */}
+        <View style={styles.mapPlaceholder}>
+          <LinearGradient
+            colors={['#4A90E2', '#7BB3F0', '#A8D0F8']}
+            style={styles.mapGradient}
+          >
+            {/* Mock map elements */}
+            <View style={styles.mapElements}>
+              {/* Current location marker */}
+              <View style={[styles.marker, styles.currentLocationMarker]}>
+                <Locate size={16} color={Colors.textLight} />
+              </View>
+              
+              {/* Route markers */}
+              <View style={[styles.marker, styles.routeMarker, { top: '25%', left: '30%' }]}>
+                <Navigation size={12} color={Colors.textLight} />
+              </View>
+              
+              <View style={[styles.marker, styles.routeMarker, { top: '60%', right: '25%' }]}>
+                <Navigation size={12} color={Colors.textLight} />
+              </View>
+              
+              {/* Rest place markers */}
+              <View style={[styles.marker, styles.restPlaceMarker, { top: '40%', left: '20%' }]}>
+                <MapPin size={12} color={Colors.textLight} />
+              </View>
+              
+              <View style={[styles.marker, styles.restPlaceMarker, { top: '70%', left: '60%' }]}>
+                <MapPin size={12} color={Colors.textLight} />
+              </View>
+            </View>
+            
+            {/* Map overlay text */}
+            <View style={styles.mapOverlay}>
+              <Text style={styles.mapTitle}>Mapa Interativo</Text>
+              <Text style={styles.mapSubtitle}>Toque para explorar rotas e pontos</Text>
+            </View>
+          </LinearGradient>
+        </View>
+        
+        {/* Map Controls */}
+        <View style={styles.mapControls}>
+          <TouchableOpacity 
+            style={styles.mapControlButton}
+            onPress={() => router.push('/gps-map')}
+          >
+            <Locate size={20} color={Colors.primary} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.mapControlButton}
+            onPress={() => router.push('/search')}
+          >
+            <Plus size={20} color={Colors.primary} />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      <GPSStatusCard />
+      {/* GPS Status Card */}
+      <View style={styles.statusContainer}>
+        <GPSStatusCard />
+      </View>
 
+      {/* Quick Actions */}
       <View style={styles.quickActions}>
         <TouchableOpacity 
           style={styles.actionButton}
-          onPress={() => router.push('/gps-map')}
+          onPress={() => router.push('/(tabs)/rest-places')}
         >
           <LinearGradient
             colors={[Colors.primary, Colors.primaryLight]}
             style={styles.actionGradient}
           >
-            <Navigation size={24} color={Colors.textLight} />
-            <Text style={styles.actionText}>Rastrear GPS</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => router.push('/(tabs)/achievements')}
-        >
-          <LinearGradient
-            colors={[Colors.secondary, Colors.secondaryLight]}
-            style={styles.actionGradient}
-          >
-            <Trophy size={24} color={Colors.textLight} />
-            <Text style={styles.actionText}>Conquistas</Text>
-            {unreadNotifications > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadNotifications}</Text>
-              </View>
-            )}
+            <MapPin size={20} color={Colors.textLight} />
+            <Text style={styles.actionText}>Pontos</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -112,78 +153,33 @@ export default function HomeScreen() {
           onPress={() => router.push('/(tabs)/community')}
         >
           <LinearGradient
-            colors={[Colors.accent, Colors.primaryLight]}
+            colors={[Colors.secondary, Colors.secondaryLight]}
             style={styles.actionGradient}
           >
-            <Users size={24} color={Colors.textLight} />
+            <Users size={20} color={Colors.textLight} />
             <Text style={styles.actionText}>Comunidade</Text>
           </LinearGradient>
         </TouchableOpacity>
-      </View>
 
-      {recentAchievements.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Conquistas Recentes</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/achievements')}>
-              <Text style={styles.seeAllText}>Ver todas</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.achievementsRow}>
-              {recentAchievements.map(achievement => (
-                <View key={achievement.id} style={styles.achievementItem}>
-                  <View style={styles.achievementIcon}>
-                    {isGuest ? (
-                      <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
-                    ) : (
-                      <Trophy size={20} color={Colors.primary} />
-                    )}
-                  </View>
-                  <Text style={styles.achievementName} numberOfLines={2}>
-                    {isGuest ? achievement.title : achievement.name}
-                  </Text>
-                  <Text style={styles.achievementPoints}>
-                    {isGuest ? '✓ Conquistado' : `+${achievement.points} pts`}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
-      )}
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Rotas em Destaque</Text>
-          <TouchableOpacity onPress={() => router.push('/search')}>
-            <Text style={styles.seeAllText}>Ver todas</Text>
-          </TouchableOpacity>
-        </View>
-        
-        {featuredRoutes.map(route => (
-          <RouteCard key={route.id} route={route} isGuest={isGuest} />
-        ))}
-      </View>
-
-      <View style={styles.section}>
         <TouchableOpacity 
-          style={styles.exploreButton}
-          onPress={() => router.push('/(tabs)/rest-places')}
+          style={styles.actionButton}
+          onPress={() => router.push('/(tabs)/achievements')}
         >
-          <View style={styles.exploreContent}>
-            <MapPin size={24} color={Colors.primary} />
-            <View style={styles.exploreTextContent}>
-              <Text style={styles.exploreTitle}>Pontos de Apoio</Text>
-              <Text style={styles.exploreSubtitle}>
-                Encontre postos, oficinas e locais de descanso
-              </Text>
-            </View>
-          </View>
+          <LinearGradient
+            colors={[Colors.accent, Colors.primaryLight]}
+            style={styles.actionGradient}
+          >
+            <Trophy size={20} color={Colors.textLight} />
+            <Text style={styles.actionText}>Conquistas</Text>
+            {unreadNotifications > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadNotifications}</Text>
+              </View>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -195,53 +191,171 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 16,
     backgroundColor: Colors.background,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  notificationButton: {
+  messagesButton: {
     position: 'relative',
     padding: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  notificationBadge: {
+  messageBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: 2,
+    right: 2,
     backgroundColor: Colors.error,
     borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    minWidth: 18,
+    height: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  notificationBadgeText: {
+  messageBadgeText: {
     color: Colors.textLight,
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
   },
   welcomeSection: {
-    marginTop: 8,
+    marginTop: 4,
   },
   greeting: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: Colors.text,
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.textSecondary,
+  },
+  mapContainer: {
+    flex: 1,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  mapPlaceholder: {
+    flex: 1,
+    minHeight: 300,
+  },
+  mapGradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  mapElements: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  marker: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  currentLocationMarker: {
+    backgroundColor: Colors.primary,
+    top: '50%',
+    left: '50%',
+    marginTop: -16,
+    marginLeft: -16,
+  },
+  routeMarker: {
+    backgroundColor: Colors.secondary,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  restPlaceMarker: {
+    backgroundColor: Colors.accent,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  mapOverlay: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  mapTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  mapSubtitle: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  mapControls: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    gap: 8,
+  },
+  mapControlButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  statusContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
   quickActions: {
     flexDirection: 'row',
     gap: 12,
     marginHorizontal: 16,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   actionButton: {
     flex: 1,
@@ -257,116 +371,33 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   actionGradient: {
-    padding: 16,
+    padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 80,
+    minHeight: 60,
     position: 'relative',
   },
   actionText: {
     color: Colors.textLight,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
-    marginTop: 8,
+    marginTop: 6,
     textAlign: 'center',
   },
   badge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
     backgroundColor: Colors.error,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   badgeText: {
     color: Colors.textLight,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  section: {
-    marginBottom: 24,
-    paddingHorizontal: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.text,
-  },
-  seeAllText: {
-    fontSize: 14,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  achievementsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  achievementItem: {
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    width: 100,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  achievementIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  achievementName: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: Colors.text,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  achievementPoints: {
     fontSize: 10,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  achievementEmoji: {
-    fontSize: 20,
-  },
-  exploreButton: {
-    borderRadius: 12,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
-  },
-  exploreContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-  },
-  exploreTextContent: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  exploreTitle: {
-    fontSize: 16,
     fontWeight: 'bold',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  exploreSubtitle: {
-    fontSize: 14,
-    color: Colors.textSecondary,
   },
 });
